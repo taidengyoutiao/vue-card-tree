@@ -4,14 +4,14 @@
     <div
       v-for="(item, key) in boxArr"
       :key="'box' + key" class="box"
-      :bid="item.bid"
+      :nodeId="item.nodeId"
       :style="{top: (item.y - 1) * (120 + 20) + 'px', left: (item.x - 1) * (180 + 20) + 'px'}"></div>
     <!-- circle -->
     <div
       v-for="(item, key) in circleArr"
       :key="'circle' + key"
-      @click="toggleShow(item.bid)"
-      :bid="item.bid"
+      @click="toggleShow(item.nodeId)"
+      :nodeId="item.nodeId"
       :class="item.showChildren ? 'icon-plus' : 'icon-minus'" class="circle"
       :style="{top: ((item.y - 1) * (120 + 20) + 120 + 2) + 'px', left: ((item.x - 1) * (180 + 20) + (180 * 0.5) - (16 * 0.5)) + 'px'}"></div>
     <!-- lines -->
@@ -45,10 +45,6 @@ export default {
     childKeyName: {
       type: String,
       required: true
-    },
-    boxIdName: {
-      type: String,
-      require: true
     }
   },
   data () {
@@ -69,13 +65,18 @@ export default {
       let _treeData = JSON.parse(JSON.stringify(this.treeData))
       // 处理父组件传入的数组
       // 只有这里使用，改为了内部的function
+      function nodeIdGenerator () {
+        return nodeIdGenerator.number++
+      }
+      nodeIdGenerator.number = 0
       function addProperties (arr, that) {
-        arr.forEach(v => {
-          // only add two property now: showChildren, bid
+        arr.forEach((v, i) => {
+          // add prop: showChildren
+          // add private key: nodeId
           // showChildren作为显示隐藏子节点的flag
-          // bid作为不同box的识别，也用来显示隐藏子节点，这个东西理论上来说是应该写在组件里面而不是外面传，但是考虑到可能还要传到外面去，而且多数的对象应该都有一个不重复的id
           v.showChildren = true
-          v.bid = v[that.boxIdName]
+          v.nodeId = i
+          v.nodeId = nodeIdGenerator()
           if (v[that.childKeyName]) {
             addProperties(v[that.childKeyName], that)
           }
@@ -104,9 +105,9 @@ export default {
         }
         if (v[this.childKeyName]) {
           // circle
-          this.circleArr.push({x, y, bid: v.bid, showChildren: v.showChildren})
+          this.circleArr.push({x, y, nodeId: v.nodeId, showChildren: v.showChildren})
           // box
-          this.boxArr.push({x, y, bid: v.bid})
+          this.boxArr.push({x, y, nodeId: v.nodeId})
           if (v.showChildren) {
             // recursion
             this.computePositions(v[this.childKeyName], y + 1)
@@ -115,7 +116,7 @@ export default {
           }
         } else {
           // box
-          this.boxArr.push({x, y, bid: v.bid})
+          this.boxArr.push({x, y, nodeId: v.nodeId})
           x++
           // max height of the wrapper
           maxY = (y > maxY) ? y : maxY
@@ -127,7 +128,7 @@ export default {
       }
     },
     // 点击circle
-    toggleShow (bid) {
+    toggleShow (nodeId) {
       // refresh一下data
       x = 1
       maxY = 1
@@ -137,17 +138,17 @@ export default {
       this.vLinePositionArr = []
       this.hLinePositionArr = []
       // 递归找到并修改flag
-      function changeShowState (arr, bid, that) {
+      function changeShowState (arr, nodeId, that) {
         arr.forEach(v => {
-          if (bid && v.bid === bid) {
+          if (nodeId && v.nodeId === nodeId) {
             v.showChildren = !v.showChildren
           }
           if (v[that.childKeyName]) {
-            changeShowState(v[that.childKeyName], bid, that)
+            changeShowState(v[that.childKeyName], nodeId, that)
           }
         }, that)
       }
-      changeShowState(this._treeData, bid, this)
+      changeShowState(this._treeData, nodeId, this)
       this.computePositions(this._treeData, 1)
       this.treeWrapperHeight = (maxY * (120 + 20)) + 20
     }

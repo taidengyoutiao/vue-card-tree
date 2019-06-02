@@ -23,6 +23,29 @@ then: use it in the *.vue file:
 import vueCardTree from 'vue-card-tree'
 import 'vue-card-tree/vue-card-tree.css'
 export default {
+    data () {
+    return {
+      treeData: [
+        {
+            text: '🌲',
+            xx: [{
+                text: '...',
+                xx: [
+                {xx: [{}, {}]}
+                ]
+            },{
+                xx: [{}, {
+                text: '🌲'
+                }]
+            }]
+            },{
+            text: '🌲',
+            xx: [
+            {}
+            ]}
+        ]
+        }
+    },
     component: { vueCardTree }
 }
 </script>

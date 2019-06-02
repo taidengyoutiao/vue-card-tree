@@ -10,7 +10,8 @@
   "dependencies": {
     "core-js": "^2.6.5",
     "lodash": "^4.17.11",
-    "vue": "^2.6.10"
+    "vue": "^2.6.10",
+    "vue-card-tree": "0.0.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.130",

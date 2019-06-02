@@ -1,51 +1,51 @@
 <template>
   <div>
-    <Tree :treeData="treeData" childKeyName="children" boxIdName="bid"></Tree>
+    <Tree :treeData="treeData" childKeyName="xx">
+      <template v-slot="{boxProps}">
+        <h2>{{boxProps.text}}</h2>
+      </template>
+    </Tree>
   </div>
 </template>
 
 <script>
-import Tree from './Tree'
+import Tree from 'vue-card-tree'
+import 'vue-card-tree/vue-card-tree.css'
 export default {
   data () {
     return {
-      treeData: [{
-        bid: 1,
-        children: [
-          {
-            bid: 2,
-            children: [
-              {
-                bid: 3,
-                children: [
-                  {
-                    bid: 4
-                  }
-                ]
-              },
-              {
-                bid: 5
-              },
-              {
-                bid: 6
-              }
+      treeData: [
+        {
+          text: '🌲',
+          xx: [{
+            text: '...',
+            xx: [
+              {xx: [{}, {}]}
             ]
-          },
-          {
-            bid: 7,
-            children: [
-              {
-                bid: 8
-              },
-              {
-                bid: 9
-              }
-            ]
-          }
-        ]
-      }]
+          },{
+            xx: [{}, {
+              text: '🌲'
+            }]
+          }]
+        },{
+          text: '🌲',
+          xx: [
+          {}
+        ]}
+      ]
     }
   },
-  components: { Tree }
+  components: {Tree}
 }
 </script>
+
+<style scoped>
+.tac {
+  text-align: center;
+  font-size: 16px;
+}
+img {
+  width: 150px;
+  height: 100px;
+}
+</style>

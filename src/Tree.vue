@@ -5,14 +5,16 @@
       v-for="(item, key) in boxArr"
       :key="'box' + key" class="box"
       :nodeId="item.nodeId"
-      :style="{top: (item.y - 1) * (120 + 20) + 'px', left: (item.x - 1) * (180 + 20) + 'px'}"></div>
+      :style="{top: (item.y - 1) * (120 + 20) + 'px', left: (item.x - 1) * (180 + 20) + 'px'}">
+      <slot :boxProps="item"></slot>
+    </div>
     <!-- circle -->
     <div
       v-for="(item, key) in circleArr"
       :key="'circle' + key"
       @click="toggleShow(item.nodeId)"
       :nodeId="item.nodeId"
-      :class="item.showChildren ? 'icon-plus' : 'icon-minus'" class="circle"
+      :class="item.showChildren ? 'icon-minus' : 'icon-plus'" class="circle"
       :style="{top: ((item.y - 1) * (120 + 20) + 120 + 2) + 'px', left: ((item.x - 1) * (180 + 20) + (180 * 0.5) - (16 * 0.5)) + 'px'}"></div>
     <!-- lines -->
     <div
@@ -33,9 +35,7 @@
 </template>
 
 <script>
-let x = 1
-let maxY = 1
-
+import './icons/style.css'
 export default {
   props: {
     treeData: {
@@ -55,14 +55,17 @@ export default {
       boxArr: [],
       circleArr: [],
       vLinePositionArr: [],
-      hLinePositionArr: []
+      hLinePositionArr: [],
+
+      maxY: 1,
+      x: 1
     }
   },
   computed: {
     // 处理一下prop: treeData
     // 深拷贝 & 添加properties
     _treeData () {
-      let _treeData = JSON.parse(JSON.stringify(this.treeData))
+      let _treeData = this.treeData ? JSON.parse(JSON.stringify(this.treeData)) : []
       // 处理父组件传入的数组
       // 只有这里使用，改为了内部的function
       function nodeIdGenerator () {
@@ -93,34 +96,32 @@ export default {
     // 这个y通过【参数传递】的方式用来保存‘递归深度’
     // 深度优先，y方向递归，x方向循环
     // 一个节点由box, hLine, vLine, circle组成。同一个节点上，横线和竖线都渲染在box的上方，而circle在box的下方
-    computePositions (someLayerData, y = 1) {
+    computePositions (oneLayerData, y = 1) {
       // h-line
       let hLinePointPositionXArr = []
-      someLayerData.forEach(function (v) {
+      oneLayerData.forEach(function (v) {
         // 存放同一个节点下面第一层所有点的x值，用来画横线
-        hLinePointPositionXArr.push(x)
+        hLinePointPositionXArr.push(this.x)
         // 第一行box上面不加竖线
         if (y > 1) {
-          this.vLinePositionArr.push({x, y})
+          this.vLinePositionArr.push({x: this.x, y})
         }
+        // box
+        this.boxArr.push({x: this.x, y, nodeId: v.nodeId, ...v})
         if (v[this.childKeyName]) {
           // circle
-          this.circleArr.push({x, y, nodeId: v.nodeId, showChildren: v.showChildren})
-          // box
-          this.boxArr.push({x, y, nodeId: v.nodeId})
+          this.circleArr.push({x: this.x, y, nodeId: v.nodeId, showChildren: v.showChildren})
           if (v.showChildren) {
             // recursion
             this.computePositions(v[this.childKeyName], y + 1)
           } else {
-            x++
+            this.x++
           }
         } else {
-          // box
-          this.boxArr.push({x, y, nodeId: v.nodeId})
-          x++
-          // max height of the wrapper
-          maxY = (y > maxY) ? y : maxY
+          this.x++
         }
+        // max height of the wrapper
+        this.maxY = (y > this.maxY) ? y : this.maxY
       }, this)
       // 第一行box上面不加横线
       if (y > 1) {
@@ -130,8 +131,8 @@ export default {
     // 点击circle
     toggleShow (nodeId) {
       // refresh一下data
-      x = 1
-      maxY = 1
+      this.x = 1
+      this.maxY = 1
       this.treeWrapperHeight = 0
       this.boxArr = []
       this.circleArr = []
@@ -140,7 +141,7 @@ export default {
       // 递归找到并修改flag
       function changeShowState (arr, nodeId, that) {
         arr.forEach(v => {
-          if (nodeId && v.nodeId === nodeId) {
+          if (v.nodeId === nodeId) {
             v.showChildren = !v.showChildren
           }
           if (v[that.childKeyName]) {
@@ -149,13 +150,13 @@ export default {
         }, that)
       }
       changeShowState(this._treeData, nodeId, this)
-      this.computePositions(this._treeData, 1)
-      this.treeWrapperHeight = (maxY * (120 + 20)) + 20
+      this.computePositions(this._treeData)
+      this.treeWrapperHeight = (this.maxY * (120 + 20)) + 20
     }
   },
   mounted () {
     this.computePositions(this._treeData)
-    this.treeWrapperHeight = (maxY * (120 + 20)) + 20
+    this.treeWrapperHeight = (this.maxY * (120 + 20)) + 20
   }
 }
 </script>
@@ -168,21 +169,15 @@ export default {
   .circle {
     position: absolute;
     z-index: 10;
-    color: #409EFF;
     cursor: pointer;
   }
   .box {
-    padding: 16px;
-    font-size: 12px;
     position: absolute;
     box-sizing: border-box;
     width: 180px;
     height: 120px;
     border: 1px solid rgba(230,230,230,1);
     background:rgba(248,248,248,1);
-  }
-  .item {
-    margin-bottom: 6px;
   }
   .v-line {
     position: absolute;
